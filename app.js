@@ -6,6 +6,12 @@ let db;
 let syncManager;
 let mascotaEnEdicionId = null;
 
+if (navigator.serviceWorker) {
+  // console.log('Service Worker is supported');
+  navigator.serviceWorker.register("./sw.js");
+}
+
+
 class SyncManager {
     constructor(db) {
         this.db = db;
