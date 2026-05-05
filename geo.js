@@ -1,44 +1,84 @@
+function setGeoStatus(message, isError = false) {
+  const status = document.getElementById("geoStatus");
+  if (!status) return;
+  status.textContent = message;
+  status.className = isError
+    ? "text-danger small mb-0"
+    : "text-muted small mb-0";
+}
+
 function getGeoLocation() {
-    if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-            function (position) {
-                console.log("Latitud:", position.coords.latitude);
-                console.log("Longitud:", position.coords.longitude);
-                mostrarMapa(position.coords.latitude, position.coords.longitude);
-            },
-            function (error) {
-                console.error("Error obteniendo la geolocalización:", error.message);
-            }
-        );
-    } else {
-        console.log("La geolocalización no está soportada por este navegador.");
-    }
+  if (!("geolocation" in navigator)) {
+    setGeoStatus(
+      "La geolocalización no está soportada por este navegador.",
+      true,
+    );
+    return;
+  }
+
+  setGeoStatus("Solicitando ubicación...");
+
+  navigator.geolocation.getCurrentPosition(
+    function (position) {
+      console.log("Latitud:", position.coords.latitude);
+      console.log("Longitud:", position.coords.longitude);
+      mostrarMapa(position.coords.latitude, position.coords.longitude);
+    },
+    function (error) {
+      console.error("Error obteniendo la geolocalización:", error.message);
+      setGeoStatus(
+        "No se pudo obtener la ubicación. Revisa permisos de ubicación y asegúrate de abrir la web por HTTPS.",
+        true,
+      );
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
+    },
+  );
 }
 
 function mostrarMapa(lat, lng) {
-    if (window._mapa) {
-        window._mapa.remove();
-    }
-    window._mapa = L.map('map').setView([lat, lng], 15);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© personal'
-    }).addTo(window._mapa);
+  if (typeof L === "undefined") {
+    setGeoStatus(
+      "Leaflet no se cargó correctamente. Revisa la conexión a la CDN.",
+      true,
+    );
+    return;
+  }
 
-    
-    const customIcon = L.divIcon({
-        className: '',
-        html: `
+  if (window._mapa) {
+    window._mapa.remove();
+  }
+  window._mapa = L.map("map").setView([lat, lng], 15);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© personal",
+  }).addTo(window._mapa);
+
+  const customIcon = L.divIcon({
+    className: "",
+    html: `
         <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M16 30s10-12.27 10-18A10 10 0 1 0 6 12c0 5.73 10 18 10 18z" fill="#e53935" stroke="#b71c1c" stroke-width="2"/>
           <circle cx="16" cy="13" r="4" fill="#fff" stroke="#b71c1c" stroke-width="2"/>
         </svg>
         `,
-        iconSize: [32, 32],
-        iconAnchor: [16, 32], 
-        popupAnchor: [0, -32]
-    });
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
+  });
 
-    L.marker([lat, lng], { icon: customIcon }).addTo(window._mapa)
-        .bindPopup('<b>¡Soy un perrito!</b><br><img src="img/perrito.jpg" alt="Ubicación" width="100">')
-        .openPopup();
+  L.marker([lat, lng], { icon: customIcon })
+    .addTo(window._mapa)
+    .bindPopup(
+      '<b>¡Soy un perrito!</b><br><img src="img/perrito.jpg" alt="Ubicación" width="100">',
+    )
+    .openPopup();
+
+  setTimeout(() => {
+    window._mapa.invalidateSize();
+  }, 0);
+
+  setGeoStatus("Ubicación mostrada correctamente.");
 }
